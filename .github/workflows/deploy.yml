@@ -16,8 +16,8 @@ jobs:       # 실행할 job 정의
 
       - name: Check gradle wrapper
         run: |
-          chmod +x back/gradlew
-          ls -la back/gradle/wrapper/
+          chmod +x boot3/gradlew
+          ls -la boot3/gradle/wrapper/
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3  # Java 환경설정
@@ -27,21 +27,21 @@ jobs:       # 실행할 job 정의
 
       - name: Grant execute permission for gradlew  
         run: chmod +x ./gradlew       # gradlew 실행권한
-        working-directory: back       # back 디렉토리에서실행  ##
+        working-directory: boot3      # back 디렉토리에서실행  ##
 
       - name: Build Spring Boot App
         run: ./gradlew clean build -x test  # 테스트제외하고 빌드
-        working-directory: back      # back 디렉토리
+        working-directory: boot3      # back 디렉토리
 
       - name: Debug Backend Files
         run: |
-          echo "=== back 디렉터리 ==="
-          ls -al back
+          echo "=== boot3 디렉터리 ==="
+          ls -al boot3
           echo "=== build/libs 디렉터리 ==="
-          ls -al back/build/libs
+          ls -al boot3/build/libs
 
       - name: Find JAR file (fat jar만 선택)
-        run: echo "JAR_FILE=$(ls back/build/libs/*SNAPSHOT.jar | grep -v plain | head -n 1)" >> $GITHUB_ENV
+        run: echo "JAR_FILE=$(ls boot3/build/libs/*SNAPSHOT.jar | grep -v plain | head -n 1)" >> $GITHUB_ENV
         # plain.jar 제외하고 실행 가능한 fat JAR만 선택
 
       - name: Debug JAR_FILE
@@ -51,21 +51,21 @@ jobs:       # 실행할 job 정의
         run: |
           if [ ! -f "${{ env.JAR_FILE }}" ]; then
             echo "❌ JAR file not found: ${{ env.JAR_FILE }}"
-            ls -al back/build/libs
+            ls -al boot3/build/libs
             exit 1
           fi
           echo "✅ JAR file found: ${{ env.JAR_FILE }}"
 
       - name: Create Backend .env from Secrets
         run: |                     # secrets 기반으로 .env 파일 생성    
-          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> back/.env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> back/.env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> back/.env
-          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> back/.env
-          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> back/.env
-          echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> back/.env
-          echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> back/.env
-          echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> back/.env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> boot3/.env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> boot3/.env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> boot3/.env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> boot3/.env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> boot3/.env
+          echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> boot3/.env
+          echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> boot3/.env
+          echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> boot3/.env
 
       - name: Ensure app directory exists on EC2
         uses: appleboy/ssh-action@v0.1.7                 #   EC2 접속후 디렉토리 생성
@@ -91,7 +91,7 @@ jobs:       # 실행할 job 정의
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "back/build/libs/boot3-0.0.1-SNAPSHOT.jar"
+          source: "boot3/build/libs/boot3-0.0.1-SNAPSHOT.jar"
           target: "/home/ubuntu/app"
 
       - name: Debug EC2 app directory
@@ -100,7 +100,7 @@ jobs:       # 실행할 job 정의
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          script: ls -lh /home/ubuntu/app/back/build/libs
+          script: ls -lh /home/ubuntu/app/boot3/build/libs
 
  
       - name: Copy Backend .env to EC2
@@ -109,7 +109,7 @@ jobs:       # 실행할 job 정의
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "back/.env"
+          source: "boot3/.env"
           target: "/home/ubuntu/app"
 
 
@@ -139,9 +139,9 @@ jobs:       # 실행할 job 정의
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/app/back/build/libs
+            cd /home/ubuntu/app/boot3/build/libs
             pm2 delete backend || true
-            export $(cat /home/ubuntu/app/back/.env | xargs)
+            export $(cat /home/ubuntu/app/boot3/.env | xargs)
             pm2 start java --name backend -- -jar boot3-0.0.1-SNAPSHOT.jar
 
   frontend:
