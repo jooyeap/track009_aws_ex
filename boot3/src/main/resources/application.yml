@@ -53,4 +53,4 @@ file:
 # https://bubobo.duckdns.org
 # 프록시 서버(nginx), 프록시가 전달해준 https 헤더정보 어떻게 처리할것인지
 server:
-  forward-header-strategy: framework
+  forward-headers-strategy: framework
